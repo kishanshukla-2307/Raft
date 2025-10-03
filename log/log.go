@@ -1,4 +1,4 @@
-package replicatedlog
+package log
 
 import (
 	"raft/types"

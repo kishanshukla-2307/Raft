@@ -1,7 +1,7 @@
 package msg
 
 import (
-	"raft/replicatedlog"
+	"raft/log"
 	"raft/types"
 )
 
@@ -10,7 +10,7 @@ type MsgAppendEntries struct {
 	LeaderID        int
 	LastEntryTermID types.TermID
 	LastEntryMsgID  types.MsgID
-	Entries         []replicatedlog.Entry
+	Entries         []log.Entry
 }
 
 type MsgAppendEntriesResponse struct {

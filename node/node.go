@@ -5,8 +5,8 @@ import (
 	"math/rand"
 	"net/rpc"
 	"raft/config"
+	raftlog "raft/log"
 	"raft/msg"
-	"raft/replicatedlog"
 	"raft/types"
 	"strings"
 	"sync"
@@ -16,15 +16,22 @@ import (
 )
 
 type Node struct {
-	NodeID                int
-	NodeAddr              string
-	Peers                 []string
-	PeerClients           []*rpc.Client
-	NodeState             NodeState
-	TermID                types.TermID
-	Log                   replicatedlog.Log
+	NodeID      int
+	NodeAddr    string
+	Peers       []string
+	PeerClients []*rpc.Client
+	NodeState   NodeState
+
+	// raft state
+	TermID       types.TermID
+	LastVotedFor int
+	Log          raftlog.Log
+	commitIdx    int
+	lastApplied  int
+	nextIdx      []int
+	matchIdx     []int
+
 	LeaderPingTimestamp   time.Time
-	LastVotedFor          int
 	CheckLeaderHealthChan chan bool
 	PingFollowersChan     chan bool
 
@@ -32,7 +39,7 @@ type Node struct {
 }
 
 func NewNode(nodeID int, nodeAddr string, peers []string) *Node {
-	Log := replicatedlog.NewInMemLog()
+	Log := raftlog.NewInMemLog()
 
 	var pingFollowers chan bool
 	pingFollowers = make(chan bool)
