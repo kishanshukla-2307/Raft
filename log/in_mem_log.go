@@ -7,8 +7,7 @@ var (
 )
 
 type InMemLog struct {
-	entries     []Entry
-	commitIndex int
+	entries []Entry
 }
 
 func NewInMemLog() *InMemLog {
@@ -18,20 +17,40 @@ func NewInMemLog() *InMemLog {
 	}
 }
 
-func (l *InMemLog) AppendEntries(entries []Entry) {
-	for _, entry := range entries {
-		l.entries = append(l.entries, entry)
+func (l *InMemLog) AppendEntry(termId types.TermID, cmd []byte) {
+	msgId := (types.MsgID)(l.GetLength())
+	entry := Entry{
+		TermID:  termId,
+		MsgID:   msgId,
+		Command: cmd,
 	}
+	l.entries = append(l.entries, entry)
 }
 
-func (l *InMemLog) DiscardUncommitedEntries() {
-	l.entries = l.entries[:l.commitIndex]
+func (l *InMemLog) DiscardEntries(idx types.MsgID) {
+	l.entries = l.entries[:idx]
 }
 
 func (l *InMemLog) LatestEntry() (types.TermID, types.MsgID) {
-	if len(l.entries) == 0 {
+	if l.GetLength() == 0 {
 		return -1, -1
 	}
 	latest_entry := l.entries[len(l.entries)-1]
 	return latest_entry.TermID, latest_entry.MsgID
+}
+
+func (l *InMemLog) GetEntry(idx types.MsgID) Entry {
+	return l.entries[idx]
+}
+
+func (l *InMemLog) GetLength() int {
+	return len(l.entries)
+}
+
+func (l *InMemLog) Print() string {
+	str := ""
+	for i := range l.entries {
+		str += string(l.entries[i].Command)
+	}
+	return str
 }

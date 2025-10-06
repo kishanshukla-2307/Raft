@@ -11,6 +11,7 @@ type MsgAppendEntries struct {
 	LastEntryTermID types.TermID
 	LastEntryMsgID  types.MsgID
 	Entries         []log.Entry
+	LeaderCommit    int
 }
 
 type MsgAppendEntriesResponse struct {

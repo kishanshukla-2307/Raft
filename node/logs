@@ -1,0 +1,252 @@
+raft ➤ go run main.go --id 3 --host localhost --port 4002 --peers localhost:4000,localhost:4001
+2026/05/07 03:37:59 error init client: dial tcp 127.0.0.1:4000: connect: connection refused
+2026/05/07 03:37:59 error init client: dial tcp 127.0.0.1:4000: connect: connection refused
+2026/05/07 03:37:59 error init client: dial tcp 127.0.0.1:4000: connect: connection refused
+2026/05/07 03:37:59 connected to peer: localhost:4000
+2026/05/07 03:37:59 connected to peer: localhost:4001
+2026/05/07 03:37:59 [Node: 3] state machine apply goroutine started with commit idx: -1, last applied: -1
+2026/05/07 03:37:59 [Node: 3] log committer goroutine started with commit idx: -1
+2026/05/07 03:38:00 [Node ID: 3 Node State: FOLLOWER Current Term: 0] State Machine State:
+2026/05/07 03:38:01 [Node ID: 3 Node State: FOLLOWER Current Term: 0] State Machine State:
+2026/05/07 03:38:02 [Node ID: 3 Node State: FOLLOWER Current Term: 0] State Machine State:
+2026/05/07 03:38:03 [Node ID: 3 Node State: FOLLOWER Current Term: 0] State Machine State:
+2026/05/07 03:38:04 received RequestVote rpc from node id: 1, for term: 1
+2026/05/07 03:38:04 received RequestVote rpc from node id: 2, for term: 2
+2026/05/07 03:38:04 leader heartbeats not received, starting election
+2026/05/07 03:38:04 [Node ID: 3 Node State: FOLLOWER Current Term: 2] State Machine State:
+2026/05/07 03:38:04 [Node: 3] log committer ticked!!
+2026/05/07 03:38:04 [Node: 3] statemachine apply ticked!!
+2026/05/07 03:38:04 next commit idx: 0, cnt: 1, commit idx: -1
+2026/05/07 03:38:04 got the vote from peer, vote count: 2 for term: 3
+2026/05/07 03:38:04 election round 0 finished
+2026/05/07 03:38:04 [Node: 3] starting to send AppendEntries
+2026/05/07 03:38:04 [Node: 3] starting to send AppendEntries to peer localhost:4001
+2026/05/07 03:38:04 [Node: 3] starting to send AppendEntries to peer localhost:4000
+2026/05/07 03:38:04 election ended, node state: 2, term: 3
+2026/05/07 03:38:05 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:06 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:06 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:06 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:06 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:06 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:06 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:06 successfully appended entries to peer: localhost:4000, with next Idx: 0, match Idx: -1
+2026/05/07 03:38:06 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:06 successfully appended entries to peer: localhost:4001, with next Idx: 0, match Idx: -1
+2026/05/07 03:38:07 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:08 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:08 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:08 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:08 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:08 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:08 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:08 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:08 successfully appended entries to peer: localhost:4000, with next Idx: 0, match Idx: -1
+2026/05/07 03:38:08 successfully appended entries to peer: localhost:4001, with next Idx: 0, match Idx: -1
+2026/05/07 03:38:09 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:10 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:10 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:10 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:10 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:10 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:10 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:10 successfully appended entries to peer: localhost:4001, with next Idx: 0, match Idx: -1
+2026/05/07 03:38:10 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:10 successfully appended entries to peer: localhost:4000, with next Idx: 0, match Idx: -1
+2026/05/07 03:38:11 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:12 received ClientProposal rpc, command: Hello, I'm client
+2026/05/07 03:38:12 appending to log, command: Hello, I'm client
+2026/05/07 03:38:12 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:12 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:12 sending AppendEntries with 1 entries to peer: localhost:4000
+2026/05/07 03:38:12 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:12 sending AppendEntries with 1 entries to peer: localhost:4001
+2026/05/07 03:38:12 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:12 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:12 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:12 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:13 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:14 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:14 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:14 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:14 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:14 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:14 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:14 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:14 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:14 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:15 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:16 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:16 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:16 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:16 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:16 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:16 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:16 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:16 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:16 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:17 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:18 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:18 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:18 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:18 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:18 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:18 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:18 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:18 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:18 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:19 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:20 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:20 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:20 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:20 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:20 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:20 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:20 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:20 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:20 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:21 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:22 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:22 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:22 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:22 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:22 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:22 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:22 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:22 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:22 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:23 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:24 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:24 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:24 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:24 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:24 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:24 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:24 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:24 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:24 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:25 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:26 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:26 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:26 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:26 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:26 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:26 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:26 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:26 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:26 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:27 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:28 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:28 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:28 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:28 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:28 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:28 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:28 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:28 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:28 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:29 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:30 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:30 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:30 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:30 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:30 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:30 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:30 successfully appended entries to peer: localhost:4001, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:30 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:30 successfully appended entries to peer: localhost:4000, with next Idx: 1, match Idx: 0
+2026/05/07 03:38:31 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:32 received ClientProposal rpc, command: Hello, I'm client
+2026/05/07 03:38:32 appending to log, command: Hello, I'm client
+2026/05/07 03:38:32 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:32 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:32 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:32 sending AppendEntries with 1 entries to peer: localhost:4000
+2026/05/07 03:38:32 sending AppendEntries with 1 entries to peer: localhost:4001
+2026/05/07 03:38:32 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:32 successfully appended entries to peer: localhost:4000, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:32 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:32 successfully appended entries to peer: localhost:4001, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:33 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:34 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:34 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:34 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:34 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:34 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:34 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:34 successfully appended entries to peer: localhost:4001, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:34 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:34 successfully appended entries to peer: localhost:4000, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:35 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:36 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:36 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:36 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:36 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:36 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:36 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:36 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:36 successfully appended entries to peer: localhost:4001, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:36 successfully appended entries to peer: localhost:4000, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:37 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:38 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:38 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:38 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:38 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:38 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:38 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:38 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:38 successfully appended entries to peer: localhost:4000, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:38 successfully appended entries to peer: localhost:4001, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:39 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:40 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:40 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:40 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:40 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:40 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:40 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:40 successfully appended entries to peer: localhost:4001, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:40 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:40 successfully appended entries to peer: localhost:4000, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:41 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:42 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:42 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:42 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:42 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:42 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:42 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:42 successfully appended entries to peer: localhost:4001, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:42 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:42 successfully appended entries to peer: localhost:4000, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:43 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:44 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:44 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:44 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:44 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:44 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:44 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:44 successfully appended entries to peer: localhost:4000, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:44 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:44 successfully appended entries to peer: localhost:4001, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:45 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:46 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:46 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:46 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:46 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:46 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:46 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:46 successfully appended entries to peer: localhost:4001, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:46 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:46 successfully appended entries to peer: localhost:4000, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:47 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:48 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+2026/05/07 03:38:48 ticker for AppendEntries to peer: localhost:4001
+2026/05/07 03:38:48 ticker for AppendEntries to peer: localhost:4000
+2026/05/07 03:38:48 sending AppendEntries with 0 entries to peer: localhost:4001
+2026/05/07 03:38:48 sending AppendEntries with 0 entries to peer: localhost:4000
+2026/05/07 03:38:48 got response of AppendEntries from peer: localhost:4000
+2026/05/07 03:38:48 successfully appended entries to peer: localhost:4000, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:48 got response of AppendEntries from peer: localhost:4001
+2026/05/07 03:38:48 successfully appended entries to peer: localhost:4001, with next Idx: 2, match Idx: 1
+2026/05/07 03:38:49 [Node ID: 3 Node State: LEADER Current Term: 3] State Machine State:
+^C%
+raft ➤

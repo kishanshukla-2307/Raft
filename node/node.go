@@ -7,6 +7,7 @@ import (
 	"raft/config"
 	raftlog "raft/log"
 	"raft/msg"
+	"raft/statemachine"
 	"raft/types"
 	"strings"
 	"sync"
@@ -26,14 +27,25 @@ type Node struct {
 	TermID       types.TermID
 	LastVotedFor int
 	Log          raftlog.Log
-	commitIdx    int
-	lastApplied  int
-	nextIdx      []int
-	matchIdx     []int
+	CommitIdx    int
+	LastApplied  int
+	NextIdx      []types.MsgID
+	MatchIdx     []types.MsgID
+	CrrLeader    int
 
-	LeaderPingTimestamp   time.Time
-	CheckLeaderHealthChan chan bool
-	PingFollowersChan     chan bool
+	StateMachine statemachine.StateMachine
+
+	LeaderPingTimestamp time.Time
+
+	BecomeFollowerChan        chan bool
+	BecomeLeaderChan          chan bool
+	StopLeaderHealthCheckChan chan bool
+	StopSendEntriesChan       chan bool
+
+	LeaderCtx         context.Context
+	CancelLeaderCtx   context.CancelFunc
+	FollowerCtx       context.Context
+	CancelFollowerCtx context.CancelFunc
 
 	Mu sync.Mutex
 }
@@ -41,22 +53,29 @@ type Node struct {
 func NewNode(nodeID int, nodeAddr string, peers []string) *Node {
 	Log := raftlog.NewInMemLog()
 
-	var pingFollowers chan bool
-	pingFollowers = make(chan bool)
-	var checkLeaderHealth chan bool
-	checkLeaderHealth = make(chan bool)
+	becomeFollowerChan := make(chan bool)
+	becomeLeaderChan := make(chan bool)
+	stopSendEntriesChan := make(chan bool)
+	stopLeaderHealthChan := make(chan bool)
+
+	stateMachine := statemachine.NewSimpleStateMachine()
 
 	return &Node{
-		NodeID:                nodeID,
-		NodeAddr:              nodeAddr,
-		Peers:                 peers,
-		NodeState:             FOLLOWER,
-		TermID:                0,
-		LastVotedFor:          -1,
-		Log:                   Log,
-		LeaderPingTimestamp:   time.Now(),
-		PingFollowersChan:     pingFollowers,
-		CheckLeaderHealthChan: checkLeaderHealth,
+		NodeID:                    nodeID,
+		NodeAddr:                  nodeAddr,
+		Peers:                     peers,
+		NodeState:                 FOLLOWER,
+		TermID:                    0,
+		LastVotedFor:              -1,
+		Log:                       Log,
+		CommitIdx:                 -1,
+		LastApplied:               -1,
+		StateMachine:              stateMachine,
+		LeaderPingTimestamp:       time.Now(),
+		BecomeFollowerChan:        becomeFollowerChan,
+		BecomeLeaderChan:          becomeLeaderChan,
+		StopSendEntriesChan:       stopSendEntriesChan,
+		StopLeaderHealthCheckChan: stopLeaderHealthChan,
 	}
 }
 
@@ -83,6 +102,11 @@ func (n *Node) InitializePeerConn() {
 		peerClients = append(peerClients, client)
 	}
 	n.PeerClients = peerClients
+	n.NextIdx = make([]types.MsgID, len(n.Peers))
+	n.MatchIdx = make([]types.MsgID, len(n.Peers))
+	for i := range n.MatchIdx {
+		n.MatchIdx[i] = -1
+	}
 }
 
 func (n *Node) LatestRecord() (types.TermID, types.MsgID) {
@@ -91,10 +115,207 @@ func (n *Node) LatestRecord() (types.TermID, types.MsgID) {
 
 func (n *Node) Run(ctx context.Context) {
 	n.InitializePeerConn()
-	var done chan bool
-	go n.LogStatus(done)
-	go n.LeaderHealth()
+	go n.LogStatus(ctx)
+	n.FollowerCtx, n.CancelFollowerCtx = context.WithCancel(context.Background())
+	go n.LeaderHealth(n.FollowerCtx)
+	go n.StateMachineApply(ctx)
 	<-ctx.Done()
+}
+
+func (n *Node) AppendToLog(termId types.TermID, cmd []byte) {
+	n.Log.AppendEntry(termId, cmd)
+}
+
+// func (n *Node) NodeStateTransitioner() {
+// 	for {
+// 		select {
+// 		case <-n.BecomeFollowerChan:
+// 			n.StopLeaderHealthCheckChan <- true
+// 			go n.SendEntries()
+// 		case <-n.BecomeLeaderChan:
+// 			n.StopSendEntriesChan <- true
+// 			go n.LeaderHealth()
+// 		}
+// 	}
+// }
+
+func (n *Node) BecomeLeader() {
+	if n.NodeState == LEADER {
+		return
+	}
+	if n.CancelFollowerCtx != nil {
+		n.CancelFollowerCtx()
+	}
+	n.NodeState = LEADER
+	_, msgId := n.Log.LatestEntry()
+	for i := range n.Peers {
+		n.NextIdx[i] = msgId + 1
+		n.MatchIdx[i] = 0
+	}
+	n.CrrLeader = n.NodeID
+	n.LeaderCtx, n.CancelLeaderCtx = context.WithCancel(context.Background())
+	go n.SendEntries(n.LeaderCtx)
+	go n.LogCommitter(n.LeaderCtx)
+}
+
+func (n *Node) BecomeFollower() {
+	if n.NodeState == FOLLOWER {
+		return
+	}
+	if n.CancelLeaderCtx != nil {
+		n.CancelLeaderCtx()
+	}
+	n.NodeState = FOLLOWER
+	n.FollowerCtx, n.CancelFollowerCtx = context.WithCancel(context.Background())
+	go n.LeaderHealth(n.FollowerCtx)
+}
+
+func (n *Node) LogCommitter(leaderCtx context.Context) {
+	ticker := time.NewTicker(config.UPDATE_COMMIT_INTERVAL * time.Second)
+	log.Printf("[Node: %v] log commiter goroutine started with commit idx: %v", n.NodeID, n.CommitIdx)
+	for {
+		select {
+		case <-ticker.C:
+			log.Printf("[Node: %v] log committer ticked!!", n.NodeID)
+			n.Mu.Lock()
+			nextCommitIdx := n.CommitIdx + 1
+			cnt := 1
+			for i := range n.MatchIdx {
+				if nextCommitIdx <= int(n.MatchIdx[i]) {
+					cnt++
+				}
+			}
+			if 2*cnt > len(n.Peers)+1 {
+				n.CommitIdx = nextCommitIdx
+			}
+			log.Printf("next commit idx: %v, cnt: %v, commit idx: %v", nextCommitIdx, cnt, n.CommitIdx)
+			n.Mu.Unlock()
+		case <-leaderCtx.Done():
+			return
+		}
+	}
+
+}
+
+func (n *Node) StateMachineApply(ctx context.Context) {
+	ticker := time.NewTicker(config.STATE_MACHINE_APPLY_INTERVAL * time.Second)
+	log.Printf("[Node: %v] state machine apply goroutine started with commit idx: %v, last applied: %v", n.NodeID, n.CommitIdx, n.LastApplied)
+	for {
+		select {
+		case <-ticker.C:
+			n.Mu.Lock()
+			log.Printf("[Node: %v] statemachine apply ticked!!", n.NodeID)
+			for n.CommitIdx > n.LastApplied {
+				n.LastApplied++
+				n.StateMachine.Apply(n.Log.GetEntry(types.MsgID(n.LastApplied)).Command)
+				log.Printf("[Node: %v] idx %v applied to state machine", n.NodeID, n.LastApplied-1)
+			}
+			n.Mu.Unlock()
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (n *Node) SendEntries(leaderCtx context.Context) {
+	log.Printf("[Node: %v] starting to send AppendEntries", n.NodeID)
+
+	for i := range n.Peers {
+		go n.SendEntriesToPeer(leaderCtx, i)
+	}
+}
+
+func (n *Node) SendEntriesToPeer(leaderCtx context.Context, peerId int) {
+	ticker := time.NewTicker(config.LEADER_PING_INTERVAL * time.Second)
+	log.Printf("[Node: %v] starting to send AppendEntries to peer %v", n.NodeID, n.Peers[peerId])
+
+	var msgAppendEntriesResponse msg.MsgAppendEntriesResponse
+	var response *rpc.Call
+	for {
+		select {
+		case <-ticker.C:
+			log.Printf("ticker for AppendEntries to peer: %v", n.Peers[peerId])
+			n.Mu.Lock()
+			// log.Printf("[1] lock acquired ticker for AppendEntries to peer: %v", n.Peers[peerId])
+			lastEntryTermId, lastEntryMsgId := n.Log.LatestEntry()
+			msgAppendEntries := msg.MsgAppendEntries{
+				TermID:          n.TermID,
+				LeaderID:        n.NodeID,
+				LastEntryTermID: lastEntryTermId,
+				LastEntryMsgID:  lastEntryMsgId,
+				Entries:         nil,
+				LeaderCommit:    n.CommitIdx,
+			}
+			// log.Printf("[2] lock acquired ticker for AppendEntries to peer: %v", n.Peers[peerId])
+			if n.NextIdx[peerId] <= lastEntryMsgId {
+				// log.Printf("[3] lock acquired ticker for AppendEntries to peer: %v", n.Peers[peerId])
+				entries := make([]raftlog.Entry, 0)
+				for i := n.NextIdx[peerId]; i <= lastEntryMsgId; i++ {
+					entries = append(entries, n.Log.GetEntry(i))
+				}
+				msgAppendEntries.Entries = entries
+				if n.NextIdx[peerId] > 0 {
+					lastEntry := n.Log.GetEntry(n.NextIdx[peerId] - 1)
+					msgAppendEntries.LastEntryTermID = lastEntry.TermID
+					msgAppendEntries.LastEntryMsgID = lastEntry.MsgID
+				} else {
+					msgAppendEntries.LastEntryTermID = -1
+					msgAppendEntries.LastEntryMsgID = -1
+				}
+				// log.Printf("[4] lock acquired ticker for AppendEntries to peer: %v", n.Peers[peerId])
+			}
+			// log.Printf("[5] lock acquired ticker for AppendEntries to peer: %v", n.Peers[peerId])
+			log.Printf("sending AppendEntries with %v entries to peer: %v", len(msgAppendEntries.Entries), n.Peers[peerId])
+			response = n.PeerClients[peerId].Go("RaftRPCService.AppendEntries", &msgAppendEntries, &msgAppendEntriesResponse, nil)
+			n.Mu.Unlock()
+
+			timeout := time.NewTimer(config.LEADER_PING_INTERVAL * time.Second / 10)
+			select {
+			case <-response.Done:
+				log.Printf("got response of AppendEntries from peer: %v", n.Peers[peerId])
+				n.Mu.Lock()
+				if msgAppendEntriesResponse.Success {
+					n.NextIdx[peerId] = lastEntryMsgId + 1
+					n.MatchIdx[peerId] = lastEntryMsgId
+					log.Printf("successfully appended entries to peer: %v, with next Idx: %v, match Idx: %v", n.Peers[peerId], n.NextIdx[peerId], n.MatchIdx[peerId])
+				} else {
+					log.Printf("failed to append entries to peer: %v", n.Peers[peerId])
+					if n.NextIdx[peerId] > 0 {
+						n.NextIdx[peerId]--
+					}
+					if msgAppendEntriesResponse.TermID > n.TermID {
+						n.BecomeFollower()
+					}
+				}
+				n.Mu.Unlock()
+			case <-timeout.C:
+				log.Printf("response timeout of AppendEntries from peer: %v", n.Peers[peerId])
+				continue
+			}
+
+		case <-leaderCtx.Done():
+			return
+		}
+	}
+}
+
+func (n *Node) LeaderHealth(followerCtx context.Context) {
+	ticker := time.NewTicker(config.LEADER_TIMEOUT * time.Second)
+
+	for {
+		select {
+		case <-ticker.C:
+			if time.Since(n.LeaderPingTimestamp) > config.LEADER_TIMEOUT*time.Second {
+				log.Printf("leader heartbeats not received, starting election")
+				n.StartElection()
+			} else {
+				log.Printf("leader alive, Term: %v, last heartbeat timestamp: %v", n.TermID, n.LeaderPingTimestamp)
+			}
+
+		case <-followerCtx.Done():
+			return
+		}
+	}
 }
 
 func (n *Node) StartElection() {
@@ -114,7 +335,7 @@ func (n *Node) StartElection() {
 		time.Sleep(time.Duration((rand.Float64() * config.ELECTION_TIMEOUT_JITTER) * float64(time.Millisecond)))
 		n.Mu.Lock()
 		if n.NodeState == LEADER || n.NodeState == FOLLOWER {
-			log.Printf("election ended, node state: %v", n.NodeState)
+			log.Printf("election ended, node state: %v, term: %v", n.NodeState, n.TermID)
 			n.Mu.Unlock()
 			return
 		}
@@ -155,13 +376,13 @@ func (n *Node) ElectionRound(ctx context.Context, electionDone chan bool) {
 		case _ = <-response.Done:
 			if msgResquestVoteResponses[idx].Vote {
 				voteCount++
-				log.Printf("got the vote from peer, vote count: %v", voteCount)
+				log.Printf("got the vote from peer, vote count: %v for term: %v", voteCount, n.TermID)
 			} else {
 				log.Printf("peer rejected vote")
 			}
 			n.Mu.Lock()
 			if 2*voteCount > len(n.Peers)+1 {
-				n.NodeState = LEADER
+				n.BecomeLeader()
 				n.Mu.Unlock()
 				electionDone <- true
 				return
@@ -179,80 +400,14 @@ func (n *Node) ElectionRound(ctx context.Context, electionDone chan bool) {
 	electionDone <- true
 }
 
-func (n *Node) LeaderHealth() {
-	ticker := time.NewTicker(config.LEADER_TIMEOUT * time.Second)
+// func (n *Node) StepDownFromLeader() {
+// 	if n.NodeState == LEADER {
+// 		go n.LeaderHealth()
+// 		n.PingFollowersChan <- false
+// 	}
+// }
 
-	for {
-		select {
-		case <-ticker.C:
-			if time.Since(n.LeaderPingTimestamp) > config.LEADER_TIMEOUT*time.Second {
-				log.Printf("leader heartbeats not received, starting election")
-				n.StartElection()
-				if n.NodeState == LEADER {
-					go n.PingFollowers()
-					return
-				}
-			} else {
-				log.Printf("leader alive, last heartbeat timestamp: %v", n.LeaderPingTimestamp)
-			}
-
-		case check := <-n.CheckLeaderHealthChan:
-			if !check {
-				return
-			}
-		}
-	}
-}
-
-func (n *Node) PingFollowers() {
-	ticker := time.NewTicker(config.LEADER_PING_INTERVAL * time.Second)
-	log.Printf("leader starting to send AppendEntries")
-
-	for {
-		select {
-		case <-ticker.C:
-			n.Mu.Lock()
-			msgAppendEntries := msg.MsgAppendEntries{
-				TermID:          n.TermID,
-				LeaderID:        n.NodeID,
-				LastEntryTermID: 0,
-				LastEntryMsgID:  0,
-				Entries:         nil,
-			}
-			n.Mu.Unlock()
-			var msgAppendEntriesResponse []msg.MsgAppendEntriesResponse
-			var responses []*rpc.Call
-
-			msgAppendEntriesResponse = make([]msg.MsgAppendEntriesResponse, len(n.Peers))
-			responses = make([]*rpc.Call, 0)
-
-			for idx, client := range n.PeerClients {
-				log.Printf("sending AppendEntries to node id: %v", n.Peers[idx])
-				response := client.Go("RaftRPCService.AppendEntries", &msgAppendEntries, &msgAppendEntriesResponse[idx], nil)
-				responses = append(responses, response)
-			}
-			for idx, response := range responses {
-				resp := <-response.Done
-				if resp.Error != nil {
-					log.Printf("error in AppendEntries rpc call to peer id: %v, err: %v", idx, resp.Error)
-				}
-			}
-		case ping := <-n.PingFollowersChan:
-			if !ping {
-				return
-			}
-		}
-	}
-}
-
-func (n *Node) StepDownFromLeader() {
-	if n.NodeState == LEADER {
-		go n.LeaderHealth()
-		n.PingFollowersChan <- false
-	}
-}
-
-func (n *Node) LogStatus(done chan bool) {
+func (n *Node) LogStatus(ctx context.Context) {
 	stateMap := map[NodeState]string{
 		0: "FOLLOWER",
 		1: "CANDIDATE",
@@ -264,9 +419,9 @@ func (n *Node) LogStatus(done chan bool) {
 		select {
 		case <-ticker.C:
 			n.Mu.Lock()
-			log.Printf("[Node ID: %v] Node State: %v Current Term: %v\n", n.NodeID, stateMap[n.NodeState], n.TermID)
+			log.Printf("[Node ID: %v] Node State: %v Current Term: %v Log: %v State Machine State: %v\n", n.NodeID, stateMap[n.NodeState], n.TermID, n.Log.Print(), n.StateMachine.GetState())
 			n.Mu.Unlock()
-		case <-done:
+		case <-ctx.Done():
 			return
 		}
 	}
