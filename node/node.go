@@ -37,11 +37,6 @@ type Node struct {
 
 	LeaderPingTimestamp time.Time
 
-	BecomeFollowerChan        chan bool
-	BecomeLeaderChan          chan bool
-	StopLeaderHealthCheckChan chan bool
-	StopSendEntriesChan       chan bool
-
 	LeaderCtx         context.Context
 	CancelLeaderCtx   context.CancelFunc
 	FollowerCtx       context.Context
@@ -53,29 +48,20 @@ type Node struct {
 func NewNode(nodeID int, nodeAddr string, peers []string) *Node {
 	Log := raftlog.NewInMemLog()
 
-	becomeFollowerChan := make(chan bool)
-	becomeLeaderChan := make(chan bool)
-	stopSendEntriesChan := make(chan bool)
-	stopLeaderHealthChan := make(chan bool)
-
 	stateMachine := statemachine.NewSimpleStateMachine()
 
 	return &Node{
-		NodeID:                    nodeID,
-		NodeAddr:                  nodeAddr,
-		Peers:                     peers,
-		NodeState:                 FOLLOWER,
-		TermID:                    0,
-		LastVotedFor:              -1,
-		Log:                       Log,
-		CommitIdx:                 -1,
-		LastApplied:               -1,
-		StateMachine:              stateMachine,
-		LeaderPingTimestamp:       time.Now(),
-		BecomeFollowerChan:        becomeFollowerChan,
-		BecomeLeaderChan:          becomeLeaderChan,
-		StopSendEntriesChan:       stopSendEntriesChan,
-		StopLeaderHealthCheckChan: stopLeaderHealthChan,
+		NodeID:              nodeID,
+		NodeAddr:            nodeAddr,
+		Peers:               peers,
+		NodeState:           FOLLOWER,
+		TermID:              0,
+		LastVotedFor:        -1,
+		Log:                 Log,
+		CommitIdx:           -1,
+		LastApplied:         -1,
+		StateMachine:        stateMachine,
+		LeaderPingTimestamp: time.Now(),
 	}
 }
 
@@ -125,19 +111,6 @@ func (n *Node) Run(ctx context.Context) {
 func (n *Node) AppendToLog(termId types.TermID, cmd []byte) {
 	n.Log.AppendEntry(termId, cmd)
 }
-
-// func (n *Node) NodeStateTransitioner() {
-// 	for {
-// 		select {
-// 		case <-n.BecomeFollowerChan:
-// 			n.StopLeaderHealthCheckChan <- true
-// 			go n.SendEntries()
-// 		case <-n.BecomeLeaderChan:
-// 			n.StopSendEntriesChan <- true
-// 			go n.LeaderHealth()
-// 		}
-// 	}
-// }
 
 func (n *Node) BecomeLeader() {
 	if n.NodeState == LEADER {
