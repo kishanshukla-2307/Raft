@@ -1,4 +1,4 @@
-## Raft Implementation in GO
+## Raft Implementation in Go
 
 Features implemented:
 -   Leader election
